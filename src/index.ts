@@ -1,6 +1,16 @@
+/**
+ * Remember:
+ * 1) Loaded data
+ * 2) Created categorical label
+ * 3) Implemented generator function for image & label
+ * 4) Realized that images in the dataset are not all the same size
+ * 5) Normalize input data
+ */
+
 import * as tf from "@tensorflow/tfjs-node";
 import fs from "fs";
 import path from "path";
+import { shuffle } from "./util";
 
 const readImage = (path: string) => {
   const imageBuffer = fs.readFileSync(path);
@@ -71,4 +81,69 @@ model.compile({
   metrics: ["accuracy"],
 });
 
-console.log(model.summary());
+const dataPath = path.join(__dirname, "../data");
+const trainingPath = path.join(dataPath, "Training");
+const testPath = path.join(dataPath, "Testing");
+testPath;
+
+const trainingPaths: { path: string; label: string }[] = [];
+const allLabels = [];
+
+for (const label of fs.readdirSync(trainingPath)) {
+  const labelPath = path.join(trainingPath, label);
+  if (!fs.lstatSync(labelPath).isDirectory()) {
+    continue;
+  }
+  allLabels.push(label);
+  for (const file of fs.readdirSync(labelPath)) {
+    const fullImagePath = path.join(labelPath, file);
+    trainingPaths.push({ path: fullImagePath, label });
+  }
+}
+
+const labelsMap: { [label: string]: number } = {};
+for (let i = 0; i < allLabels.length; i++) {
+  labelsMap[allLabels[i]] = i;
+}
+
+shuffle(trainingPaths);
+
+function labelToCategorical(label: string) {
+  const toRet = [];
+  for (const l in labelsMap) {
+    if (l === label) {
+      toRet.push(1.0);
+    } else {
+      toRet.push(0.0);
+    }
+  }
+  return tf.tensor(toRet);
+}
+
+function* data() {
+  for (let i = 0; i < trainingPaths.length; i++) {
+    // Generate one sample at a time.
+    const img = readImage(trainingPaths[i].path);
+    console.log(trainingPaths[i]);
+    console.log(img);
+    yield img;
+  }
+}
+
+function* labels() {
+  for (let i = 0; i < 100; i++) {
+    // Generate one sample at a time.
+    yield labelToCategorical(trainingPaths[i].label);
+  }
+}
+
+const xs = tf.data.generator(data);
+const ys = tf.data.generator(labels);
+// We zip the data and labels together, shuffle and batch 32 samples at a time.
+const ds = tf.data.zip({ xs, ys }).shuffle(100 /* bufferSize */).batch(32);
+ds;
+
+// Train the model for 5 epochs.
+model.fitDataset(ds, { epochs: 5 }).then((info) => {
+  console.log("Accuracy", info.history.acc);
+});
