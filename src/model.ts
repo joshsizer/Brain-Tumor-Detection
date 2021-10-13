@@ -14,6 +14,7 @@ export function getModel(
   model.add(
     tf.layers.conv2d({
       inputShape: [IMG_WIDTH, IMG_HEIGHT, IMG_CHANNELS],
+      batchInputShape: [null, IMG_WIDTH, IMG_HEIGHT, IMG_CHANNELS],
       kernelSize: 5,
       filters: 4,
       strides: 1,

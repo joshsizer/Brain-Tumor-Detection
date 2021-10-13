@@ -3,103 +3,120 @@ import fs from "fs";
 import path from "path";
 import { shuffle } from "./util";
 
+export default class BrainTumorData {
+  trainingPaths: { path: string; label: string }[];
+  testingPaths: { path: string; label: string }[];
+  allLabels: string[];
+  labelMap: { [label: string]: number };
+
+  constructor(trainingPath: string, testingPath: string) {
+    const { trainingPaths, testingPaths, allLabels } = this.getPathsAndLabels(
+      trainingPath,
+      testingPath
+    );
+    this.trainingPaths = trainingPaths;
+    this.testingPaths = testingPaths;
+    this.allLabels = allLabels;
+    this.labelMap = this.createLabelMap(allLabels);
+
+    shuffle(this.trainingPaths);
+    shuffle(this.testingPaths);
+  }
+
+  data(which: "train" | "test") {
+    // "this" is not defined when tensorflow calls
+    // the returned function, so we pass along all the
+    // dependancies here
+    const paths = which === "train" ? this.trainingPaths : this.testingPaths;
+    return function* (): Iterator<tf.TensorContainer, any, undefined> {
+      for (let i = 0; i < paths.length; i++) {
+        // Generate one sample at a time.
+        yield tf.tidy(() => {
+          let img = readImage(paths[i].path);
+          img = tf.image.resizeBilinear(img, [128, 128]);
+          img = tf.cast(img, "float32");
+          img = img.div(tf.scalar(255));
+          return img;
+        });
+      }
+    };
+  }
+
+  labels(which: "train" | "test") {
+    const paths = which === "train" ? this.trainingPaths : this.testingPaths;
+    const labelToCategorical = this.labelToCategorical;
+    const labelMap = this.labelMap;
+    return function* (): Iterator<tf.TensorContainer, any, undefined> {
+      for (let i = 0; i < paths.length; i++) {
+        yield labelToCategorical(paths[i].label, labelMap);
+      }
+    };
+  }
+
+  private getPathsAndLabels(
+    trainingPath: string,
+    testingPath: string
+  ): {
+    trainingPaths: { path: string; label: string }[];
+    testingPaths: { path: string; label: string }[];
+    allLabels: string[];
+  } {
+    const trainingPaths: { path: string; label: string }[] = [];
+    const testingPaths: { path: string; label: string }[] = [];
+    const allLabels = [];
+
+    for (const label of fs.readdirSync(trainingPath)) {
+      const labelPath = path.join(trainingPath, label);
+      if (!fs.lstatSync(labelPath).isDirectory()) {
+        continue;
+      }
+      allLabels.push(label);
+      for (const file of fs.readdirSync(labelPath)) {
+        const fullImagePath = path.join(labelPath, file);
+        trainingPaths.push({ path: fullImagePath, label });
+      }
+    }
+
+    for (const label of fs.readdirSync(testingPath)) {
+      const labelPath = path.join(testingPath, label);
+      if (!fs.lstatSync(labelPath).isDirectory()) {
+        continue;
+      }
+      for (const file of fs.readdirSync(labelPath)) {
+        const fullImagePath = path.join(labelPath, file);
+        testingPaths.push({ path: fullImagePath, label });
+      }
+    }
+
+    return { trainingPaths, testingPaths, allLabels };
+  }
+
+  createLabelMap(allLabels: string[]): { [label: string]: number } {
+    const labelsMap: { [label: string]: number } = {};
+    for (let i = 0; i < allLabels.length; i++) {
+      labelsMap[allLabels[i]] = i;
+    }
+    return labelsMap;
+  }
+
+  labelToCategorical(label: string, labelsMap: { [label: string]: number }) {
+    const toRet = [];
+    for (const l in labelsMap) {
+      if (l === label) {
+        toRet.push(1.0);
+      } else {
+        toRet.push(0.0);
+      }
+    }
+    return tf.tensor(toRet, undefined, "float32");
+  }
+}
+
 export function readImage(path: string) {
-  const imageBuffer = fs.readFileSync(path);
-  const tfimage = tf.node.decodeImage(imageBuffer);
-  //default #channel 4
-  return tfimage;
-}
-
-const dataPath = path.join(__dirname, "../data");
-const trainingPath = path.join(dataPath, "Training");
-const testPath = path.join(dataPath, "Testing");
-testPath;
-
-const trainingPaths: { path: string; label: string }[] = [];
-const allLabels = [];
-
-for (const label of fs.readdirSync(trainingPath)) {
-  const labelPath = path.join(trainingPath, label);
-  if (!fs.lstatSync(labelPath).isDirectory()) {
-    continue;
-  }
-  allLabels.push(label);
-  for (const file of fs.readdirSync(labelPath)) {
-    const fullImagePath = path.join(labelPath, file);
-    trainingPaths.push({ path: fullImagePath, label });
-  }
-}
-
-const labelsMap: { [label: string]: number } = {};
-for (let i = 0; i < allLabels.length; i++) {
-  labelsMap[allLabels[i]] = i;
-}
-
-shuffle(trainingPaths);
-
-function labelToCategorical(label: string) {
-  const toRet = [];
-  for (const l in labelsMap) {
-    if (l === label) {
-      toRet.push(1.0);
-    } else {
-      toRet.push(0.0);
-    }
-  }
-  return tf.tensor(toRet, undefined, "float32");
-}
-
-export function* data() {
-  for (let i = 0; i < trainingPaths.length; i++) {
-    // Generate one sample at a time.
-    let img = readImage(trainingPaths[i].path);
-    img = tf.image.resizeBilinear(img, [128, 128]);
-    img = tf.cast(img, "float32");
-    img = img.div(tf.scalar(255));
-    const shape = img.shape;
-    const desiredShape = tf.zeros([128, 128, 3]).shape;
-    let areShapesEqual = true;
-    for (let i = 0; i < shape.length; i++) {
-      if (shape[i] !== desiredShape[i]) {
-        areShapesEqual = false;
-        break;
-      }
-    }
-
-    if (areShapesEqual) {
-      yield img;
-    } else {
-      continue;
-    }
-    // let img = readImage(trainingPaths[i].path);
-    // img = tf.cast(img, "float32");
-    // img = tf.image.resizeBilinear(tfImage, [128, 128]).div(tf.scalar(255));
-    // yield img;
-  }
-}
-
-export function* labels() {
-  for (let i = 0; i < trainingPaths.length; i++) {
-    // Generate one sample at a time.
-    let img = readImage(trainingPaths[i].path);
-    img = tf.image.resizeBilinear(img, [128, 128]);
-    img = tf.cast(img, "float32");
-    img = img.div(tf.scalar(255));
-    const shape = img.shape;
-    const desiredShape = tf.zeros([128, 128, 3]).shape;
-    let areShapesEqual = true;
-    for (let i = 0; i < shape.length; i++) {
-      if (shape[i] !== desiredShape[i]) {
-        areShapesEqual = false;
-        break;
-      }
-    }
-    if (areShapesEqual) {
-      yield labelToCategorical(trainingPaths[i].label);
-    } else {
-      continue;
-    }
-
-    yield labelToCategorical(trainingPaths[i].label);
-  }
+  return tf.tidy(() => {
+    const imageBuffer = fs.readFileSync(path);
+    const tfimage = tf.node.decodeImage(imageBuffer, 3);
+    //default #channel 4
+    return tfimage;
+  });
 }
