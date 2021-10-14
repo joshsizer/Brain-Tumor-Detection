@@ -1,20 +1,18 @@
 import * as tf from "@tensorflow/tfjs-node";
 
-export function getModel(
-  imgHeight: number,
-  imgWidth: number,
-  imgChannels: number
-) {
+export function getModel(inputImageShape: {
+  height: number;
+  width: number;
+  channels: number;
+}) {
   const model = tf.sequential();
 
-  const IMG_HEIGHT = imgHeight;
-  const IMG_WIDTH = imgWidth;
-  const IMG_CHANNELS = imgChannels;
+  const { height, width, channels } = inputImageShape;
 
   model.add(
     tf.layers.conv2d({
-      inputShape: [IMG_WIDTH, IMG_HEIGHT, IMG_CHANNELS],
-      batchInputShape: [null, IMG_WIDTH, IMG_HEIGHT, IMG_CHANNELS],
+      inputShape: [width, height, channels],
+      //batchInputShape: [null, IMG_WIDTH, IMG_HEIGHT, IMG_CHANNELS],
       kernelSize: 5,
       filters: 4,
       strides: 1,
