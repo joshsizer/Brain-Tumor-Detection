@@ -91,7 +91,7 @@ export default class BrainTumorData {
     return { trainingPaths, testingPaths, allLabels };
   }
 
-  createLabelMap(allLabels: string[]): { [label: string]: number } {
+  private createLabelMap(allLabels: string[]): { [label: string]: number } {
     const labelsMap: { [label: string]: number } = {};
     for (let i = 0; i < allLabels.length; i++) {
       labelsMap[allLabels[i]] = i;
@@ -99,7 +99,10 @@ export default class BrainTumorData {
     return labelsMap;
   }
 
-  labelToCategorical(label: string, labelsMap: { [label: string]: number }) {
+  private labelToCategorical(
+    label: string,
+    labelsMap: { [label: string]: number }
+  ) {
     const toRet = [];
     for (const l in labelsMap) {
       if (l === label) {
