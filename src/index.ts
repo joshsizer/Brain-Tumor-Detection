@@ -32,7 +32,7 @@ const brainTumorData = new BrainTumorData(
 
 const model = new BrainTumorModel(DESIRED_IMG_SHAPE);
 
-const NUM_EPOCHS = 1;
+const NUM_EPOCHS = 40;
 const BATCH_SIZE = 32;
 const SHUFFLE_BUFFER_SIZE = 100;
 
