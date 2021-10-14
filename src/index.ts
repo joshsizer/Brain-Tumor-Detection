@@ -33,22 +33,24 @@ const ds = tf.data
   .batch(32)
   .prefetch(32);
 
+const xsTest = tf.data.generator(brainTumorData.data("test"));
+const ysTest = tf.data.generator(brainTumorData.labels("test"));
+const dsTest = tf.data
+  .zip({ xs: xsTest, ys: ysTest })
+  .shuffle(100 /* bufferSize */)
+  .batch(32);
+
 (async () => {
   // Train the model for 5 epochs.
   await model
     .fitDataset(ds, {
-      epochs: 40,
+      epochs: 5,
+      validationBatchSize: 32,
+      validationData: dsTest,
     })
     .then((info) => {
       console.log("Accuracy", info.history.acc);
     });
-
-  const xsTest = tf.data.generator(brainTumorData.data("test"));
-  const ysTest = tf.data.generator(brainTumorData.labels("test"));
-  const dsTest = tf.data
-    .zip({ xs: xsTest, ys: ysTest })
-    .shuffle(100 /* bufferSize */)
-    .batch(32);
 
   await model
     .evaluateDataset(dsTest as tf.data.Dataset<{}>, {})
