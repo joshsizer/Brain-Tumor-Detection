@@ -35,18 +35,11 @@ export default class BrainTumorData {
     // dependancies here
     const paths = which === "train" ? this.trainingPaths : this.testingPaths;
     const desiredImageShape = this.desiredImageShape;
+
     return function* (): Iterator<tf.TensorContainer, any, undefined> {
       for (let i = 0; i < paths.length; i++) {
-        // Generate one sample at a time.
         yield tf.tidy(() => {
-          let img = readImage(paths[i].path, desiredImageShape.channels);
-          img = tf.image.resizeBilinear(img, [
-            desiredImageShape.height,
-            desiredImageShape.width,
-          ]);
-          img = tf.cast(img, "float32");
-          img = img.div(tf.scalar(255));
-          return img;
+          return readImage(paths[i].path, desiredImageShape.channels);
         });
       }
     };
@@ -56,6 +49,7 @@ export default class BrainTumorData {
     const paths = which === "train" ? this.trainingPaths : this.testingPaths;
     const labelToCategorical = this.labelToCategorical;
     const labelMap = this.labelMap;
+
     return function* (): Iterator<tf.TensorContainer, any, undefined> {
       for (let i = 0; i < paths.length; i++) {
         yield labelToCategorical(paths[i].label, labelMap);
