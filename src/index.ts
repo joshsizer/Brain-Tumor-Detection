@@ -68,4 +68,6 @@ const dsTest = tf.data
       console.log((info as tf.Scalar[])[1].dataSync());
       console.log(model.metricsNames);
     });
+
+  await model.save("file://" + SAVE_MODEL_PATH);
 })();
