@@ -11,6 +11,7 @@ import * as tf from "@tensorflow/tfjs-node";
 import path from "path";
 import BrainTumorModel from "./model";
 import BrainTumorData from "./data";
+import imagePreprocessor from "./preprocessor";
 
 const DATA_PATH = path.join(__dirname, "..", "data");
 const TRAINING_PATH = path.join(DATA_PATH, "Training");
@@ -31,11 +32,13 @@ const brainTumorData = new BrainTumorData(
 
 const model = new BrainTumorModel(DESIRED_IMG_SHAPE);
 
-const NUM_EPOCHS = 5;
+const NUM_EPOCHS = 1;
 const BATCH_SIZE = 32;
 const SHUFFLE_BUFFER_SIZE = 100;
 
-const xs = tf.data.generator(brainTumorData.data("train"));
+const xs = tf.data
+  .generator(brainTumorData.data("train"))
+  .map(imagePreprocessor(DESIRED_IMG_SHAPE));
 const ys = tf.data.generator(brainTumorData.labels("train"));
 const ds = tf.data
   .zip({ xs, ys })
@@ -43,7 +46,9 @@ const ds = tf.data
   .batch(BATCH_SIZE)
   .prefetch(BATCH_SIZE);
 
-const xsTest = tf.data.generator(brainTumorData.data("test"));
+const xsTest = tf.data
+  .generator(brainTumorData.data("test"))
+  .map(imagePreprocessor(DESIRED_IMG_SHAPE));
 const ysTest = tf.data.generator(brainTumorData.labels("test"));
 const dsTest = tf.data
   .zip({ xs: xsTest, ys: ysTest })
