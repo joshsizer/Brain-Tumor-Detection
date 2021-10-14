@@ -9,7 +9,7 @@
 
 import * as tf from "@tensorflow/tfjs-node";
 import path from "path";
-import { getModel } from "./model";
+import BrainTumorModel from "./model";
 import BrainTumorData from "./data";
 
 const DATA_PATH = path.join(__dirname, "..", "data");
@@ -29,7 +29,7 @@ const brainTumorData = new BrainTumorData(
   DESIRED_IMG_SHAPE
 );
 
-const model = getModel(DESIRED_IMG_SHAPE);
+const model = new BrainTumorModel(DESIRED_IMG_SHAPE);
 
 const NUM_EPOCHS = 5;
 const BATCH_SIZE = 32;
