@@ -12,9 +12,10 @@ import path from "path";
 import { getModel } from "./model";
 import BrainTumorData from "./data";
 
-const dataPath = path.join(__dirname, "..", "data");
-const trainingPath = path.join(dataPath, "Training");
-const testingPath = path.join(dataPath, "Testing");
+const DATA_PATH = path.join(__dirname, "..", "data");
+const TRAINING_PATH = path.join(DATA_PATH, "Training");
+const TESTING_PATH = path.join(DATA_PATH, "Testing");
+const SAVE_MODEL_PATH = path.join(__dirname, "..", "model");
 
 const DESIRED_IMG_SHAPE = {
   height: 128,
@@ -23,35 +24,37 @@ const DESIRED_IMG_SHAPE = {
 };
 
 const brainTumorData = new BrainTumorData(
-  trainingPath,
-  testingPath,
+  TRAINING_PATH,
+  TESTING_PATH,
   DESIRED_IMG_SHAPE
 );
 
 const model = getModel(DESIRED_IMG_SHAPE);
 
+const NUM_EPOCHS = 5;
+const BATCH_SIZE = 32;
+const SHUFFLE_BUFFER_SIZE = 100;
+
 const xs = tf.data.generator(brainTumorData.data("train"));
 const ys = tf.data.generator(brainTumorData.labels("train"));
-// We zip the data and labels together, shuffle and batch 32 samples at a time.
 const ds = tf.data
   .zip({ xs, ys })
-  .shuffle(100 /* bufferSize */)
-  .batch(32)
-  .prefetch(32);
+  .shuffle(SHUFFLE_BUFFER_SIZE)
+  .batch(BATCH_SIZE)
+  .prefetch(BATCH_SIZE);
 
 const xsTest = tf.data.generator(brainTumorData.data("test"));
 const ysTest = tf.data.generator(brainTumorData.labels("test"));
 const dsTest = tf.data
   .zip({ xs: xsTest, ys: ysTest })
-  .shuffle(100 /* bufferSize */)
-  .batch(32);
+  .shuffle(SHUFFLE_BUFFER_SIZE)
+  .batch(BATCH_SIZE);
 
 (async () => {
-  // Train the model for 5 epochs.
   await model
     .fitDataset(ds, {
-      epochs: 5,
-      validationBatchSize: 32,
+      epochs: NUM_EPOCHS,
+      validationBatchSize: BATCH_SIZE,
       validationData: dsTest,
     })
     .then((info) => {
