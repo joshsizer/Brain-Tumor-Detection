@@ -16,13 +16,19 @@ const dataPath = path.join(__dirname, "..", "data");
 const trainingPath = path.join(dataPath, "Training");
 const testingPath = path.join(dataPath, "Testing");
 
-const brainTumorData = new BrainTumorData(trainingPath, testingPath);
+const DESIRED_IMG_SHAPE = {
+  height: 128,
+  width: 128,
+  channels: 3,
+};
 
-const IMG_HEIGHT = 128;
-const IMG_WIDTH = 128;
-const IMG_CHANNELS = 3;
+const brainTumorData = new BrainTumorData(
+  trainingPath,
+  testingPath,
+  DESIRED_IMG_SHAPE
+);
 
-const model = getModel(IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS);
+const model = getModel(DESIRED_IMG_SHAPE);
 
 const xs = tf.data.generator(brainTumorData.data("train"));
 const ys = tf.data.generator(brainTumorData.labels("train"));
