@@ -27,6 +27,7 @@
   "homepage": "https://github.com/joshsizer/Brain-Tumor-Detection#readme",
   "devDependencies": {
     "@types/node": "^16.10.3",
+    "typedoc": "^0.22.6",
     "typescript": "^4.4.3"
   },
   "dependencies": {
