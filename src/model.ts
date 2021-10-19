@@ -2,8 +2,13 @@ import * as tf from "@tensorflow/tfjs-node";
 
 /**
  * Define a convolutional neural network by extending a
- * tf.Sequential model. Observe the constructor for network's
- * architecture.
+ * {@link tf.Sequential} model. Observe the constructor for
+ * the network's architecture.
+ *
+ * Great thanks to
+ * https://codelabs.developers.google.com/codelabs/tfjs-training-classfication/index.html#0
+ * for a great CNN example which I used as a starting point
+ * for this model.
  */
 export default class BrainTumorModel extends tf.Sequential {
   constructor(inputImageShape: {
