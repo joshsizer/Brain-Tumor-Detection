@@ -46,7 +46,8 @@ export default class BrainTumorData {
    *
    * @param which Either "train" or "test" for the respective
    *  data.
-   * @returns A generator function for use by tf.data.generator.
+   * @returns A generator function for use by
+   *  {@link tf.data.generator}.
    */
   data(which: "train" | "test") {
     // "this" is not defined when tensorflow calls
@@ -70,7 +71,8 @@ export default class BrainTumorData {
    *
    * @param which Either "train" or "test" for the respective
    *  labels.
-   * @returns A generator function for use by tf.data.generator.
+   * @returns A generator function for use by
+   *  {@link tf.data.generator}.
    */
   labels(which: "train" | "test") {
     const paths = which === "train" ? this.trainingPaths : this.testingPaths;
