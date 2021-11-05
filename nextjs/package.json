@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@apollo/client": "^3.4.16",
     "@tensorflow/tfjs": "^3.11.0",
     "cookie": "^0.4.1",
     "next": "^11.1.2",

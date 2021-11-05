@@ -101,14 +101,14 @@ const startServer = async () => {
   if (process.env.SERVER_PORT === undefined) {
     throw new Error("Please specify SERVER_PORT environment variable.");
   }
-  
+
   if (process.env.SERVER_HOST === undefined) {
     throw new Error("Please specify SERVER_HOST environment variable.");
   }
-  
+
   const PORT = parseInt(process.env.SERVER_PORT);
   const HOST = process.env.SERVER_HOST;
-  
+
   app.listen(PORT, HOST, () => {
     console.log(
       `🚀 Server ready at http://${HOST}:${PORT}${server.graphqlPath}`

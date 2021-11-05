@@ -5,6 +5,7 @@ export const typeDefs = gql`
   type Query {
     getUser(filter: UserFilter): User
     verifyPassword(filter: UserFilter!, password: String!): Boolean
+    getRandomImage: BrainTumorImage
   }
 
   type Mutation {
@@ -32,5 +33,13 @@ export const typeDefs = gql`
     email: String!
     password: String!
     refreshCount: Int!
+  }
+
+  type BrainTumorImage {
+    id: Int!
+    path: String!
+    classification: String!
+    width: Int!
+    height: Int!
   }
 `;

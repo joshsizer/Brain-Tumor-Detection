@@ -1,4 +1,6 @@
 import { User } from "./entity/User";
+import { BrainTumorImage } from "./entity/BrainTumorImage";
+import { getConnection } from "typeorm";
 import bcrypt from "bcrypt";
 
 // Provide resolver functions for your schema fields
@@ -39,6 +41,9 @@ export const resolvers = {
       const hashPass = user.password;
 
       return await bcrypt.compare(password, hashPass);
+    },
+    getRandomImage: async () => {
+      return await BrainTumorImage.getRandomImage();
     },
   },
   Mutation: {
