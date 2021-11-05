@@ -47,7 +47,7 @@ const HomePage: React.FC<Props> = () => {
       const maxIndex = tf.argMax(oneHotPred);
       setPrediction(indexToLabel(maxIndex.dataSync()[0]));
     }
-  }, [img, imgLoaded, model, setPrediction, indexToLabel]);
+  }, [img, imgLoaded, model, modelLoaded, setPrediction, indexToLabel]);
 
   useEffect(() => {
     if (imgLoaded && modelLoaded) {
