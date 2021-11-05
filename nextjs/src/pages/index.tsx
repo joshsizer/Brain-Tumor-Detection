@@ -12,15 +12,13 @@ import { onError } from "@apollo/client/link/error";
 interface Props {}
 
 const HomePage: React.FC<Props> = () => {
-  const [model, setModel] = useState<tf.LayersModel | undefined>(undefined);
+  const [model, setModel] = useState<tf.LayersModel>();
   const [modelLoaded, setModelLoaded] = useState<boolean>(false);
-  const [imgURL, setImgURL] = useState<string | undefined>(
-    "http://localhost/images/glioma/Te-gl_0010.jpg"
-  );
-  const [imgLoaded, setImgLoaded] = useState<boolean>(false);
   const img = useRef<HTMLImageElement>(null);
-  const [imgNum, setImgNum] = useState<number>(10);
-  const [prediction, setPrediction] = useState<string | undefined>(undefined);
+  const [imgURL, setImgURL] = useState<string>();
+  const [imgLoaded, setImgLoaded] = useState<boolean>(false);
+  const [prediction, setPrediction] = useState<string>();
+  const [actual, setActual] = useState<string>();
 
   const indexToLabel = useCallback((index: number) => {
     const map: { [index: number]: string } = {
@@ -33,10 +31,7 @@ const HomePage: React.FC<Props> = () => {
   }, []);
 
   const doPrediction = useCallback(() => {
-    console.log(`Image loaded? : ${imgLoaded}`);
-    if (img.current && imgLoaded) {
-      console.log("Doing prediction.");
-
+    if (img.current && imgLoaded && model && modelLoaded) {
       let imageTensor = tf.browser.fromPixels(img.current);
       imageTensor = tf.tidy(() => {
         imageTensor = tf.image.resizeBilinear(imageTensor, [128, 128]);
@@ -46,29 +41,27 @@ const HomePage: React.FC<Props> = () => {
         return imageTensor;
       });
 
-      if (model) {
-        console.log("Model is not null!");
-        const oneHotPred = (
-          model.predict(imageTensor) as tf.Tensor<tf.Rank>
-        ).dataSync();
-        const maxIndex = tf.argMax(oneHotPred);
-        setPrediction(indexToLabel(maxIndex.dataSync()[0]));
-      }
+      const oneHotPred = (
+        model.predict(imageTensor) as tf.Tensor<tf.Rank>
+      ).dataSync();
+      const maxIndex = tf.argMax(oneHotPred);
+      setPrediction(indexToLabel(maxIndex.dataSync()[0]));
     }
   }, [img, imgLoaded, model, setPrediction, indexToLabel]);
 
-  const loadModel = useCallback(() => {
-    if (!modelLoaded) {
-      tf.loadLayersModel("http://localhost/model/model.json").then(
-        (newModel) => {
-          console.log("Model loaded.");
-          setModelLoaded(true);
-          setModel(newModel);
-          doPrediction();
-        }
-      );
+  useEffect(() => {
+    if (imgLoaded && modelLoaded) {
+      doPrediction();
     }
-  }, [modelLoaded, setModel, setModelLoaded, doPrediction]);
+  }, [imgLoaded, modelLoaded, doPrediction]);
+
+  const loadModel = useCallback(() => {
+    tf.loadLayersModel("http://localhost/model/model.json").then((newModel) => {
+      setModelLoaded(true);
+      setModel(newModel);
+      console.log("Model loaded.");
+    });
+  }, [setModel, setModelLoaded]);
 
   useEffect(() => {
     loadModel();
@@ -77,34 +70,45 @@ const HomePage: React.FC<Props> = () => {
   const onImgLoaded = useCallback(() => {
     setImgLoaded(true);
     console.log("Image loaded.");
-    doPrediction();
-  }, [setImgLoaded, doPrediction]);
+  }, [setImgLoaded]);
 
+  // Uncomment if imgURL has a default value.
+  //
   // Sometimes, the image element and its content are loaded
   // before the page's javascript. In this case, our component
   // must do the heavy lifting of checking if the image has
   // loaded yet, since the onLoad callback will not have been
   // registered yet.
-  useEffect(() => {
-    const image = img.current;
-    if (!imgLoaded && image && image.complete) {
-      onImgLoaded();
-    }
-  }, [imgLoaded, img, onImgLoaded]);
+  //
+  // useEffect(() => {
+  //   const image = img.current;
+  //   if (!imgLoaded && image && image.complete) {
+  //     onImgLoaded();
+  //   }
+  // }, [imgLoaded, img, onImgLoaded]);
 
-  const changeImage = async () => {
+  const changeImage = useCallback(async () => {
     setImgLoaded(false);
-    const imgPath = ((await getRandomImage()) as any).data.getRandomImage.path;
-    console.log(imgPath);
+    const brainTumorImage = ((await getRandomImage()) as any).data
+      .getRandomImage;
+    const imgPath = brainTumorImage.path;
+    const actualLabel = brainTumorImage.classification;
+
     setImgURL(`http://localhost${imgPath}`);
-  };
+    setActual(actualLabel);
+  }, [setImgLoaded, setImgURL]);
+
+  useEffect(() => {
+    changeImage();
+  }, [changeImage]);
 
   return (
     <>
-      <h1>Hello there!</h1>
+      <h1>Brain Tumor Detection</h1>
       <p>The model's name is: {model?.name}</p>
       <img src={imgURL} onLoad={onImgLoaded} ref={img} />
       <p>Prediction: {prediction}</p>
+      <p>Actual: {actual}</p>
       <button onClick={changeImage}>Change Image!</button>
     </>
   );
