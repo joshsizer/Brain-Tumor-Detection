@@ -3,4 +3,5 @@ module.exports = {
   publicRuntimeConfig: {
     DOMAIN_NAME: process.env.DOMAIN_NAME,
   },
+  basePath: "/brain-tumor-detection",
 };

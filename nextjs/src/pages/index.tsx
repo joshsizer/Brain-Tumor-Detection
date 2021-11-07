@@ -11,6 +11,10 @@ import { onError } from "@apollo/client/link/error";
 
 interface Props {}
 
+const BASE_PATH = "/brain-tumor-detection";
+const MODEL_URL = `${BASE_PATH}/model/model.json`;
+const GRAPHQL_URL = `${BASE_PATH}/graphql`;
+
 const HomePage: React.FC<Props> = () => {
   const [model, setModel] = useState<tf.LayersModel>();
   const [modelLoaded, setModelLoaded] = useState<boolean>(false);
@@ -44,6 +48,7 @@ const HomePage: React.FC<Props> = () => {
       const oneHotPred = (
         model.predict(imageTensor) as tf.Tensor<tf.Rank>
       ).dataSync();
+      imageTensor.dispose();
       const maxIndex = tf.argMax(oneHotPred);
       setPrediction(indexToLabel(maxIndex.dataSync()[0]));
     }
@@ -56,7 +61,7 @@ const HomePage: React.FC<Props> = () => {
   }, [imgLoaded, modelLoaded, doPrediction]);
 
   const loadModel = useCallback(() => {
-    tf.loadLayersModel("http://localhost/model/model.json").then((newModel) => {
+    tf.loadLayersModel(MODEL_URL).then((newModel) => {
       setModelLoaded(true);
       setModel(newModel);
       console.log("Model loaded.");
@@ -94,7 +99,7 @@ const HomePage: React.FC<Props> = () => {
     const imgPath = brainTumorImage.path;
     const actualLabel = brainTumorImage.classification;
 
-    setImgURL(`http://localhost${imgPath}`);
+    setImgURL(imgPath);
     setActual(actualLabel);
   }, [setImgLoaded, setImgURL]);
 
@@ -102,16 +107,20 @@ const HomePage: React.FC<Props> = () => {
     changeImage();
   }, [changeImage]);
 
-  return (
-    <>
-      <h1>Brain Tumor Detection</h1>
-      <p>The model's name is: {model?.name}</p>
-      <img src={imgURL} onLoad={onImgLoaded} ref={img} />
-      <p>Prediction: {prediction}</p>
-      <p>Actual: {actual}</p>
-      <button onClick={changeImage}>Change Image!</button>
-    </>
-  );
+  if (modelLoaded) {
+    return (
+      <div>
+        <h1>Brain Tumor Detection</h1>
+        <p>The model's name is: {model?.name}</p>
+        <img src={BASE_PATH + imgURL} onLoad={onImgLoaded} ref={img} />
+        <p>Prediction: {prediction}</p>
+        <p>Actual: {actual}</p>
+        <button onClick={changeImage}>Change Image!</button>
+      </div>
+    );
+  } else {
+    return <h1>Loading...</h1>;
+  }
 };
 
 export default HomePage;
@@ -132,7 +141,7 @@ async function getRandomImage() {
   );
 
   const httpLink = new HttpLink({
-    uri: `http://localhost/graphql`,
+    uri: `${GRAPHQL_URL}`,
   });
 
   const client = new ApolloClient({
