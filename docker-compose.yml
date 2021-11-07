@@ -8,56 +8,66 @@ services:
         APP_ENV: ${APP_ENV}
         APP_ENV_DEVELOPMENT: ${APP_ENV_DEVELOPMENT}
         APP_ENV_PRODUCTION: ${APP_ENV_PRODUCTION}
-    container_name: nginx
+    container_name: ${APP_NAME}-nginx
     restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
+    # ports:
+    #   - "80:80"
+    #   - "443:443"
     volumes:
       - ./nginx/etc/nginx/sites-available:/etc/nginx/sites-available
       - ./nginx/etc/nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./certbot/etc/letsencrypt:/etc/letsencrypt
       - ./certbot/var/www/certbot:/var/www/certbot
     command: '/bin/sh -c ''while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g "daemon off;"'''
+    networks:
+      - default
+      - brain-tumor-detection
 
   certbot:
     image: certbot/certbot
+    container_name: ${APP_NAME}-certbot
     volumes:
       - ./certbot/etc/letsencrypt:/etc/letsencrypt
       - ./certbot/var/www/certbot:/var/www/certbot
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    networks:
+      - default
 
   nextjs:
-    build: 
+    build:
       context: ./nextjs
       dockerfile: Dockerfile
       args:
         APP_ENV: ${APP_ENV}
         APP_ENV_DEVELOPMENT: ${APP_ENV_DEVELOPMENT}
         APP_ENV_PRODUCTION: ${APP_ENV_PRODUCTION}
-    container_name: nextjs
+    container_name: ${APP_NAME}-nextjs
     restart: unless-stopped
     volumes:
       - ./nextjs/src:/nextjs/src
+    networks:
+      - default
 
   postgres:
     image: postgres:latest
-    container_name: postgres
+    container_name: ${APP_NAME}-postgres
     restart: unless-stopped
     env_file:
       - ./postgres/database.env
     volumes:
       - ./postgres/data:/var/lib/postgresql/data
+    networks:
+      - default
 
   graphql-external:
-    build: 
+    build:
       context: ./graphql-typeorm
       dockerfile: Dockerfile
       args:
         APP_ENV: ${APP_ENV}
         APP_ENV_DEVELOPMENT: ${APP_ENV_DEVELOPMENT}
         APP_ENV_PRODUCTION: ${APP_ENV_PRODUCTION}
-    container_name: graphql-external
+    container_name: ${APP_NAME}-graphql-external
     restart: unless-stopped
     environment:
       - ALWAYS_AUTHENTICATE=0
@@ -66,16 +76,18 @@ services:
       - ./graphql-typeorm/src:/graphql-typeorm/src
     depends_on:
       - postgres
+    networks:
+      - default
 
   graphql-internal:
-    build: 
+    build:
       context: ./graphql-typeorm
       dockerfile: Dockerfile
       args:
         APP_ENV: ${APP_ENV}
         APP_ENV_DEVELOPMENT: ${APP_ENV_DEVELOPMENT}
         APP_ENV_PRODUCTION: ${APP_ENV_PRODUCTION}
-    container_name: graphql-internal
+    container_name: ${APP_NAME}-graphql-internal
     restart: unless-stopped
     environment:
       - ALWAYS_AUTHENTICATE=1
@@ -84,19 +96,29 @@ services:
       - ./graphql-typeorm/src:/graphql-typeorm/src
     depends_on:
       - postgres
+    networks:
+      - default
 
   auth-server:
-    build: 
+    build:
       context: ./auth-server-nodejs
       dockerfile: Dockerfile
       args:
         APP_ENV: ${APP_ENV}
         APP_ENV_DEVELOPMENT: ${APP_ENV_DEVELOPMENT}
         APP_ENV_PRODUCTION: ${APP_ENV_PRODUCTION}
-    container_name: auth-server
+    container_name: ${APP_NAME}-auth-server
     restart: unless-stopped
     volumes:
       - ./auth-server-nodejs/dist:/auth-server-nodejs/dist
       - ./auth-server-nodejs/src:/auth-server-nodejs/src
     depends_on:
       - graphql-internal
+    networks:
+      - default
+
+networks:
+  default:
+    driver: bridge
+  brain-tumor-detection:
+    driver: bridge
