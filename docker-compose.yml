@@ -72,7 +72,7 @@ services:
     environment:
       - ALWAYS_AUTHENTICATE=0
     volumes:
-      - ./graphql-typeorm/dist:/graphql-typeorm/dist
+      #- ./graphql-typeorm/dist:/graphql-typeorm/dist
       - ./graphql-typeorm/src:/graphql-typeorm/src
     depends_on:
       - postgres
@@ -92,7 +92,7 @@ services:
     environment:
       - ALWAYS_AUTHENTICATE=1
     volumes:
-      - ./graphql-typeorm/dist:/graphql-typeorm/dist
+      #- ./graphql-typeorm/dist:/graphql-typeorm/dist
       - ./graphql-typeorm/src:/graphql-typeorm/src
     depends_on:
       - postgres
@@ -110,7 +110,7 @@ services:
     container_name: ${APP_NAME}-auth-server
     restart: unless-stopped
     volumes:
-      - ./auth-server-nodejs/dist:/auth-server-nodejs/dist
+      #- ./auth-server-nodejs/dist:/auth-server-nodejs/dist
       - ./auth-server-nodejs/src:/auth-server-nodejs/src
     depends_on:
       - graphql-internal
