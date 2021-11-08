@@ -33,10 +33,10 @@ then
     exit 1;
 fi;
 
-docker-compose exec \
+docker exec -it \
     -e PGHOST=$PGHOST \
     -e PGDATABASE=$PGDATABASE \
     -e PGUSER=$PGUSER \
     -e PGPASSWORD=$PGPASSWORD \
-    nextjs \
+    btd-nextjs \
     bash ./src/scripts/index-images.sh
