@@ -1,5 +1,6 @@
 import { User } from "./entity/User";
 import { BrainTumorImage } from "./entity/BrainTumorImage";
+import { Confidence } from "./entity/Confidence";
 import { getConnection } from "typeorm";
 import bcrypt from "bcrypt";
 
@@ -45,6 +46,9 @@ export const resolvers = {
     getRandomImage: async () => {
       return await BrainTumorImage.getRandomImage();
     },
+    getConfidence: async () => {
+      return await Confidence.find();
+    },
   },
   Mutation: {
     addUser: async (_: any, args: any, { alwaysAuthenticate }: any) => {
@@ -82,6 +86,26 @@ export const resolvers = {
 
         return true;
       } catch (error) {
+        return false;
+      }
+    },
+    addConfidence: async (_: any, args: any) => {
+      const { confidence } = args;
+
+      const index = Math.floor(confidence / 0.025);
+
+      let currentConfidence = await Confidence.findOne({ where: { index } });
+
+      if (currentConfidence) {
+        currentConfidence.count += 1;
+      } else {
+        currentConfidence = Confidence.create({ index, count: 1 });
+      }
+
+      try {
+        await currentConfidence.save();
+        return true;
+      } catch {
         return false;
       }
     },

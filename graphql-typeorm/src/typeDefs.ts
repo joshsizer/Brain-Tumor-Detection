@@ -6,6 +6,7 @@ export const typeDefs = gql`
     getUser(filter: UserFilter): User
     verifyPassword(filter: UserFilter!, password: String!): Boolean
     getRandomImage: BrainTumorImage
+    getConfidence: [Confidence]
   }
 
   type Mutation {
@@ -17,6 +18,7 @@ export const typeDefs = gql`
       email: String!
       password: String!
     ): Boolean!
+    addConfidence(confidence: Float!): Boolean!
   }
 
   input UserFilter {
@@ -41,5 +43,10 @@ export const typeDefs = gql`
     classification: String!
     width: Int!
     height: Int!
+  }
+
+  type Confidence {
+    index: Int!
+    count: Int!
   }
 `;

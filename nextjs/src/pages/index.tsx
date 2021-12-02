@@ -48,9 +48,12 @@ const HomePage: React.FC<Props> = () => {
       const oneHotPred = (
         model.predict(imageTensor) as tf.Tensor<tf.Rank>
       ).dataSync();
+
       imageTensor.dispose();
-      const maxIndex = tf.argMax(oneHotPred);
-      setPrediction(indexToLabel(maxIndex.dataSync()[0]));
+      const maxIndex = tf.argMax(oneHotPred).dataSync()[0];
+      setPrediction(indexToLabel(maxIndex));
+
+      addConfidence(oneHotPred[maxIndex]);
     }
   }, [img, imgLoaded, model, modelLoaded, setPrediction, indexToLabel]);
 
@@ -103,6 +106,10 @@ const HomePage: React.FC<Props> = () => {
     setActual(actualLabel);
   }, [setImgLoaded, setImgURL]);
 
+  const viewDashboard = () => {
+    window.location.href = `${BASE_PATH}/dashboard`;
+  };
+
   useEffect(() => {
     changeImage();
   }, [changeImage]);
@@ -110,12 +117,14 @@ const HomePage: React.FC<Props> = () => {
   if (modelLoaded) {
     return (
       <div>
+        <button onClick={viewDashboard}>View Dashboard</button>
         <h1>Brain Tumor Detection</h1>
         <p>The model's name is: {model?.name}</p>
         <img src={BASE_PATH + imgURL} onLoad={onImgLoaded} ref={img} />
         <p>Prediction: {prediction}</p>
         <p>Actual: {actual}</p>
         <button onClick={changeImage}>Change Image!</button>
+        <br />
       </div>
     );
   } else {
@@ -169,4 +178,47 @@ async function getRandomImage() {
   };
 
   return await getRandomImage();
+}
+
+async function addConfidence(newConfidence: number) {
+  const errorLink = onError(
+    ({ graphQLErrors, networkError /**forward, operation**/ }) => {
+      if (graphQLErrors)
+        graphQLErrors.map(({ message, locations, path }) =>
+          console.log(
+            `[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`
+          )
+        );
+
+      if (networkError) console.log(`[Network error]: ${networkError}`);
+      // forward(operation);
+    }
+  );
+
+  const httpLink = new HttpLink({
+    uri: `${GRAPHQL_URL}`,
+  });
+
+  const client = new ApolloClient({
+    link: from([errorLink, httpLink]),
+    cache: new InMemoryCache(),
+  });
+
+  const addConfidenceMutation = gql`
+    mutation addConfidence($confidence: Float!) {
+      addConfidence(confidence: $confidence)
+    }
+  `;
+
+  const addConfidence = async () => {
+    return client.mutate({
+      mutation: addConfidenceMutation,
+      errorPolicy: "all",
+      variables: {
+        confidence: newConfidence,
+      },
+    });
+  };
+
+  return await addConfidence();
 }
