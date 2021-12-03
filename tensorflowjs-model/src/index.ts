@@ -28,7 +28,7 @@ import path from "path";
 const DATA_PATH = path.join(__dirname, "..", "data");
 const TRAINING_PATH = path.join(DATA_PATH, "Training");
 const TESTING_PATH = path.join(DATA_PATH, "Testing");
-// const SAVE_MODEL_PATH = path.join(__dirname, "..", "model");
+const SAVE_MODEL_PATH = path.join(__dirname, "..", "model");
 
 // The preprocessor, model, and data generators need to know
 // the desired image shape. Ideally, the data generators should
@@ -111,5 +111,5 @@ const dsTest = tf.data
       console.log(model.metricsNames);
     });
 
-  // await model.save("file://" + SAVE_MODEL_PATH);
+  await model.save("file://" + SAVE_MODEL_PATH);
 })();

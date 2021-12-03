@@ -95,6 +95,25 @@ const HomePage: React.FC<Props> = () => {
   //   }
   // }, [imgLoaded, img, onImgLoaded]);
 
+  const viewDashboard = () => {
+    window.location.href = `${BASE_PATH}/dashboard`;
+  };
+
+  const handleFileUpload: React.ChangeEventHandler<HTMLInputElement> = (
+    event
+  ) => {
+    if (event?.target?.files && event.target.files.length > 0) {
+      console.log(event.target.files[0]);
+      const file = event.target.files[0];
+      const fileType = file["type"];
+      const validImageTypes = ["image/gif", "image/jpeg", "image/png"];
+      if (validImageTypes.includes(fileType)) {
+        setImgURL(URL.createObjectURL(file));
+        setActual("");
+      }
+    }
+  };
+
   const changeImage = useCallback(async () => {
     setImgLoaded(false);
     const brainTumorImage = ((await getRandomImage()) as any).data
@@ -102,13 +121,9 @@ const HomePage: React.FC<Props> = () => {
     const imgPath = brainTumorImage.path;
     const actualLabel = brainTumorImage.classification;
 
-    setImgURL(imgPath);
+    setImgURL(BASE_PATH + imgPath);
     setActual(actualLabel);
   }, [setImgLoaded, setImgURL]);
-
-  const viewDashboard = () => {
-    window.location.href = `${BASE_PATH}/dashboard`;
-  };
 
   useEffect(() => {
     changeImage();
@@ -120,10 +135,18 @@ const HomePage: React.FC<Props> = () => {
         <button onClick={viewDashboard}>View Dashboard</button>
         <h1>Brain Tumor Detection</h1>
         <p>The model's name is: {model?.name}</p>
-        <img src={BASE_PATH + imgURL} onLoad={onImgLoaded} ref={img} />
+        <img
+          src={imgURL}
+          onLoad={onImgLoaded}
+          ref={img}
+          style={{ height: 500, width: "auto" }}
+        />
         <p>Prediction: {prediction}</p>
         <p>Actual: {actual}</p>
-        <button onClick={changeImage}>Change Image!</button>
+        <div>
+          <input type="file" onChange={handleFileUpload}></input>
+        </div>
+        <button onClick={changeImage}>Get Random Image</button>
         <br />
       </div>
     );
