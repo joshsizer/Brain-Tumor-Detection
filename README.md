@@ -4,6 +4,8 @@ Detect brain tumors using a convolutional neural network. Can classify as having
 
 Comes with a Web-UI for testing the network. Select from a bank of available MRI scans and observe the network's predictive results.
 
+Available at https://josh.sizer.dev/brain-tumor-detection
+
 
 ## Data source
 
